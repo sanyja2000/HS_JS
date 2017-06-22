@@ -1,0 +1,264 @@
+<html>
+<head>
+<style>
+body{overflow: hidden;margin:0;padding: 0}
+canvas {cursor: url("cursor-point.png"), auto;}
+@font-face {
+    font-family: GameFont;
+    src: url(hsfont.otf);
+}
+</style>
+<meta charset="utf-8">
+<link rel="icon" href="icon.png">
+<title>Let's Play Hearthstone! - Javascript version</title>
+</head>
+<body>
+<canvas id="mycanvas"></canvas>
+<script src="cards.js"></script>
+<script src="minions.js"></script>
+<script src="use_cards.js"></script>
+<script src="ai.js"></script>
+<script src="heroes.js"></script>
+<script>
+var canvas = document.getElementById("mycanvas");
+var ctx = canvas.getContext("2d");
+
+var WIDTH = canvas.width = 1024;
+var HEIGHT = canvas.height = 600;
+
+var mouseX = 0;
+var mouseY = 0;
+
+var manaImg = new Image();
+manaImg.src = "mana.png";
+
+var bmanaImg = new Image();
+bmanaImg.src = "blank_mana.png";
+
+var board = new Image();
+board.src="board_empty.png";
+
+function genDeck(player){
+	var cards = ne_cards;
+	player.deck=[];
+	for(var i=0; i<30; i++){
+		player.deck.push(newCard(ne_cards[Math.floor(Math.random()*ne_cards.length)]));
+	}
+}
+
+//Setting up card display
+
+function updateMouse(evt){
+	var rect = canvas.getBoundingClientRect();
+	mouseX = evt.clientX - rect.left;
+	mouseY = evt.clientY - rect.top;
+}
+
+function dragCard(){
+	console.log(mouseX,mouseY);
+	if(mouseX > 777 && mouseX < 847 && mouseY > 260 && mouseY < 284 && !attacking && !grabbed){
+		endTurn(player,enemy);
+		EnemyTurn(enemy,player);
+	}
+	if(hovering){
+		grabbed=hovering[0];
+		hovering=0;
+	}
+	if(onMinion){
+		console.log(onMinion);
+		attacking = true;
+		canvas.style.cursor = "url('crosshair.png'), crosshair";
+	}
+}
+
+function relCard(){
+	if(grabbed){
+		if(mouseY<350 && mouseY>150 && mouseX > 200 && mouseX < 800){
+			if(player.mana >= grabbed.mana){
+				player.hand.splice(player.hand.indexOf(grabbed),1);
+				player.mana-=grabbed.mana;
+				if(grabbed.type=="m" && player.minions.length<8){
+					summonMinion(grabbed,player,enemy);
+				}
+				else{
+					castSpell(grabbed,player,enemy);
+				}
+			}else{alert("I don't have enough mana!");}
+		}
+		grabbed=0;
+	}
+	if(attacking){
+		var target = checkMinions(enemy.minions,185);
+		if(target){
+			attackMinion(onMinion,target,enemy,player);
+		}else if(mouseX > 457 && mouseX < 540 && mouseY > 60 && mouseY < 160){
+			attackFace(onMinion,enemy);
+		}
+		console.log("Released cursor at: x:"+mouseX+", y:"+mouseY)
+		canvas.style.cursor = "url('cursor-point.png'), auto";
+		attacking=false;
+	}
+}
+
+canvas.addEventListener("mousemove",updateMouse);
+canvas.addEventListener("mousedown",dragCard);
+canvas.addEventListener("mouseup",relCard);
+
+var hovering;
+var grabbed=0;
+
+function attackFace(minion,player){
+	player.health -= minion.atk;
+	damageToHeroAnim(player,minion.atk);
+	minion.can_play -=1;
+}
+
+function drawCard(player){
+	var c_index = Math.floor(Math.random()*player.deck.length);
+	if(player.hand.length<10){
+			player.hand.push(player.deck.splice(c_index,1)[0]);
+		}
+	else {console.log("Burned card:");console.log(player.deck.splice(c_index,1))}
+}
+
+
+function endTurn(byplayer,enemy){
+	for(var i=0; i<byplayer.minions.length;i++){
+		byplayer.minions[i].can_play=0;
+	}
+	for(var i=0; i<enemy.minions.length;i++){
+		enemy.minions[i].can_play=1;
+	}
+	if(enemy.fmana < 10){
+		enemy.fmana++;
+	}
+	enemy.mana = enemy.fmana;
+	drawCard(enemy);
+}
+
+function Player(health,hero){
+	this.health = health;
+	this.defhealth = health;
+	this.hand = [];
+	this.fmana = 0;
+	this.mana = 0;
+	this.deck = [];
+	this.minions = [];
+	this.hero = hero;
+}
+player = new Player(30,new Hero("Jaina Proudmoore","jaina.png",400));
+enemy = new Player(30,new Hero("Rexxar","rexxar.png",63));
+
+genDeck(player);
+genDeck(enemy);
+
+for(var i=0; i<3;i++){
+	drawCard(player);
+	drawCard(enemy);
+}
+
+var onMinion = false;
+var attacking = false;
+
+function update(){
+	//Drawing the board
+	if(!attacking){
+		onMinion=false;
+	}
+	ctx.clearRect(0,0,WIDTH,HEIGHT);
+	ctx.drawImage(board,0,0,WIDTH,HEIGHT);
+	ctx.fillStyle="rgba(255,0,0,0.5)";
+	displayMana(player,enemy);
+	//ctx.fillRect(200,150,600,300); //<-- Dropping area
+
+	//Draw Heroes
+	drawPlayerHero(player);
+	drawPlayerHero(enemy);
+
+	//Drawing the minions
+	for(var i=enemy.minions.length-1; i>=0;i--){
+		var x = 453-(enemy.minions.length-1)*40+i*80;
+		displayMinion(enemy.minions[i],x,185);
+		if(enemy.minions[i].hp <=0){
+			if(enemy.minions[i].dtreat){
+				enemy.minions[i].dtreat(enemy,player);
+			}
+			enemy.minions.splice(i,1);
+		}
+	}
+
+	for(var i=player.minions.length-1; i>=0;i--){
+		var x = 453-(player.minions.length-1)*40+i*80;
+		displayMinion(player.minions[i],x,290);
+		if(player.minions[i].hp <=0){
+			if(player.minions[i].dtreat){
+				player.minions[i].dtreat(player,enemy);
+			}
+			player.minions.splice(i,1);
+		}
+	}
+
+
+	//Drawing the hand
+	hovering = 0;
+	for(var i=0;i<player.hand.length;i++){
+		if(grabbed!=player.hand[i]){
+		if(player.hand.length==1){
+			var x = 505-43;
+		}
+		else if(player.hand.length==2){
+			var x = 505-85+85*i;
+		}
+		else if(player.hand.length==3){
+			var x = 505-43+(i-1)*85+(-8*player.hand.length);
+		}
+		 else {
+		var x = 375+(256/player.hand.length)*i+(-8*player.hand.length);
+		}
+		if(mouseX>=x && mouseX<=x+85 && mouseY >500){
+			hovering = [player.hand[i],x];			
+		}else{
+			if(player.hand.length <= 3){
+				displayCard(player.hand[i],x,510,0,0.3);
+			}
+			else{
+				displayCard(player.hand[i],x,510,(-15+i*30/(player.hand.length-1))*Math.PI/180,0.3);
+			}
+		}}
+	}
+	if(hovering){
+		displayCard(hovering[0],hovering[1]-85,300,0,0.7);
+	}
+	if(grabbed){
+		displayCard(grabbed,mouseX-115,mouseY-142,0,0.7);
+	}
+
+	//Drawing opponent's hand
+	for(var i=0; i<enemy.hand.length;i++){
+		if(enemy.hand.length==1){
+			var x = 505-30;
+		}
+		else if(enemy.hand.length==2){
+			var x = 505-60+60*i;
+		}
+		else if(enemy.hand.length==3){
+			var x= 505-30+(i-1)*60;
+		}
+		else{
+			var x = 380+(256/enemy.hand.length)*i;
+		}
+		ctx.save();
+		if(enemy.hand.length>4){
+		ctx.translate(x+30,-50);
+		ctx.rotate((15-i*30/(enemy.hand.length-1))*Math.PI/180);
+		ctx.translate(-x-30,50);
+		}
+		ctx.drawImage(card_back_img,x,-50,300*0.2,407*0.2);
+		ctx.restore();
+	}
+}
+
+var gameloop = setInterval(update,1000/60);
+</script>
+</body>
+</html>
