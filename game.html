@@ -219,18 +219,18 @@ function update(){
 			hovering = [player.hand[i],x];			
 		}else{
 			if(player.hand.length <= 3){
-				displayCard(player.hand[i],x,510,0,0.3);
+				displayCard(player.hand[i],x,510,0,0.3,player.mana);
 			}
 			else{
-				displayCard(player.hand[i],x,510,(-15+i*30/(player.hand.length-1))*Math.PI/180,0.3);
+				displayCard(player.hand[i],x,510,(-15+i*30/(player.hand.length-1))*Math.PI/180,0.3,player.mana);
 			}
 		}}
 	}
 	if(hovering){
-		displayCard(hovering[0],hovering[1]-85,300,0,0.7);
+		displayCard(hovering[0],hovering[1]-85,300,0,0.7,player.mana);
 	}
 	if(grabbed){
-		displayCard(grabbed,mouseX-115,mouseY-142,0,0.7);
+		displayCard(grabbed,mouseX-75,mouseY-142,0,0.5,player.mana);
 	}
 
 	//Drawing opponent's hand
@@ -255,6 +255,16 @@ function update(){
 		}
 		ctx.drawImage(card_back_img,x,-50,300*0.2,407*0.2);
 		ctx.restore();
+	} 
+	if(enemy.health <= 0){
+		alert("You WIN!");
+		alert("Refresh the page, to replay");
+		clearInterval(gameloop);
+	}
+	if(player.health <= 0){
+		alert("You LOST!");
+		alert("Refresh the page, to replay");
+		clearInterval(gameloop);
 	}
 }
 

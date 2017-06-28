@@ -52,7 +52,7 @@ card_legendary_img.src="card_legendary.png";
 var card_back_img = new Image();
 card_back_img.src="card_types/card_back.png";
 
-function displayCard(card,x,y,rot,scl){
+function displayCard(card,x,y,rot,scl,avMana){
 	if(!scl) {scl=1}
 	ctx.save();
 	ctx.translate(x+150*scl,y+203*scl);
@@ -60,6 +60,11 @@ function displayCard(card,x,y,rot,scl){
 	ctx.translate(-x-150*scl,-y-203*scl);
 	var card_type_img = card_type_imgs[card_types.indexOf(card.class)*2+(card.type=="s")];
 	
+
+	if(avMana >= card.mana){
+		ctx.fillStyle="lime";
+		ctx.fillRect(x+12*scl,y+12*scl,281*scl,383*scl);
+	}
 	var card_pic=new Image();
 	card_pic.src=card.pic;
 	ctx.drawImage(card_pic,x-5*scl,y,290*scl,300*scl);
