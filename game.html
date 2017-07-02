@@ -56,7 +56,7 @@ function updateMouse(evt){
 	mouseY = evt.clientY - rect.top;
 }
 
-function dragCard(){
+function dragCard(evt){
 	evt.preventDefault();
 	evt.stopPropagation();
 	console.log(mouseX,mouseY);
@@ -75,7 +75,7 @@ function dragCard(){
 	}
 }
 
-function relCard(){
+function relCard(evt){
 	evt.preventDefault();
 	evt.stopPropagation();
 	if(grabbed){
