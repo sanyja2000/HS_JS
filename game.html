@@ -76,6 +76,7 @@ function dragCard(evt){
 }
 
 function relCard(evt){
+	updateMouse(evt);
 	evt.preventDefault();
 	evt.stopPropagation();
 	if(grabbed){
