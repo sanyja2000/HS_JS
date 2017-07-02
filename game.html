@@ -49,12 +49,16 @@ function genDeck(player){
 //Setting up card display
 
 function updateMouse(evt){
+	evt.preventDefault();
+	evt.stopPropagation();
 	var rect = canvas.getBoundingClientRect();
 	mouseX = evt.clientX - rect.left;
 	mouseY = evt.clientY - rect.top;
 }
 
 function dragCard(){
+	evt.preventDefault();
+	evt.stopPropagation();
 	console.log(mouseX,mouseY);
 	if(mouseX > 777 && mouseX < 847 && mouseY > 260 && mouseY < 284 && !attacking && !grabbed){
 		endTurn(player,enemy);
@@ -72,6 +76,8 @@ function dragCard(){
 }
 
 function relCard(){
+	evt.preventDefault();
+	evt.stopPropagation();
 	if(grabbed){
 		if(mouseY<350 && mouseY>150 && mouseX > 200 && mouseX < 800){
 			if(player.mana >= grabbed.mana){
